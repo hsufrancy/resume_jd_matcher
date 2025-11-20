@@ -3,7 +3,7 @@ from typing import List, Dict
 from openai import OpenAI
 import streamlit as st
 
-API_KEY = os.getenv("OPENAI_API_KEY")
+API_KEY = os.getenv("OPENAI_API_KEY") or st.secrets["OPENAI_API_KEY"]
 client = OpenAI(api_key=API_KEY)
 
 def propose_missing_keywords(canonical_jd: dict, resume_best_chunks: List[str],

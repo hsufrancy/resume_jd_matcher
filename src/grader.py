@@ -3,7 +3,7 @@ from openai import OpenAI
 import streamlit as st
 from typing import List, Dict
 
-API_KEY = os.getenv("OPENAI_API_KEY")
+API_KEY = os.getenv("OPENAI_API_KEY") or st.secrets["OPENAI_API_KEY"]
 client = OpenAI(api_key=API_KEY)
 
 def grade_resume(canonical_jd: dict, top_chunks: List[str], model:str ="gpt-4o-mini") -> Dict:

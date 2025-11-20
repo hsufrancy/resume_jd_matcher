@@ -5,7 +5,7 @@ import numpy as np
 from typing import List, Tuple
 from .embeddings import embed_text
 
-API_KEY = os.getenv("OPENAI_API_KEY")
+API_KEY = os.getenv("OPENAI_API_KEY") or st.secrets["OPENAI_API_KEY"]
 client = OpenAI(api_key=API_KEY)
 
 CANON_SCHEMA = {
