@@ -40,25 +40,66 @@ Return JSON with: skills_programming, skills_ml, skills_data, tools, responsibil
     data = resp.choices[0].message.content
     return json.loads(data)
 
-def semantic_present(keyword: str, chunk_vecs: List[np.ndarray], thresh=0.75) -> bool:
+def _normalize_field_to_list(value) -> List[str]:
+    """
+    Normalize JD fields to a list of strings.
+    - If it's a string: wrap it in a list.
+    - If it's a list: keep only non-empty strings.
+    - Otherwise: return [].
+    """
+    if isinstance(value, str):
+        return [value.strip()] if value.strip() else []
+    if isinstance(value, list):
+        return [str(v).strip() for v in value if isinstance(v, str) and v.strip()]
+    return []
+
+
+def semantic_present(keyword: str, chunk_vecs: List[np.ndarray], thresh: float = 0.75) -> bool:
+    if not chunk_vecs:
+        return False
+
     kv = embed_text(keyword)
-    sims = [float(np.dot(kv, cv) / (np.linalg.norm(kv) * np.linalg.norm(cv) + 1e-8)) for cv in chunk_vecs]
-    return max(sims) >= thresh if sims else False
+    kv_norm = np.linalg.norm(kv) + 1e-8
 
-def uncover_keywords(cannonical_jd: dict, chunk_vecs: List[np.ndarray]) -> Tuple[List[str], List[str]]:
-    # pool all canidate targets from JD JSON
-    pool = (
-        cannonical_jd.get("skills_programming", []) +
-        cannonical_jd.get("skills_ml", []) +
-        cannonical_jd.get("skills_data", []) +
-        cannonical_jd.get("tools", []) +
-        cannonical_jd.get("domain_terms", []) +
-        cannonical_jd.get("responsibilities", []) +
-        cannonical_jd.get("education", [])
-    )
+    sims = []
+    for cv in chunk_vecs:
+        denom = kv_norm * (np.linalg.norm(cv) + 1e-8)
+        sims.append(float(np.dot(kv, cv) / denom))
 
-    pool = [p.strip() for p in pool if p.strip()]
+    return max(sims) >= thresh
+
+
+def uncover_keywords(
+    canonical_jd: dict, chunk_vecs: List[np.ndarray]
+) -> Tuple[List[str], List[str]]:
+    """
+    Build a pool of keywords from the canonical JD and split into:
+    - present: semantically covered in the resume
+    - missing: not covered
+    """
+    fields = [
+        "skills_programming",
+        "skills_ml",
+        "skills_data",
+        "tools",
+        "domain_terms",
+        "responsibilities",
+        "education",
+    ]
+
+    pool: List[str] = []
+    for key in fields:
+        value = canonical_jd.get(key, [])
+        pool.extend(_normalize_field_to_list(value))
+
+    # dedupe & clean
+    pool = [p for p in {p.strip() for p in pool if p.strip()}]
+
     present, missing = [], []
-    for kw in sorted(set(pool), key=str.lower):
-        (present if semantic_present(kw, chunk_vecs) else missing).append(kw)
-        return present, missing
+    for kw in sorted(pool, key=str.lower):
+        if semantic_present(kw, chunk_vecs):
+            present.append(kw)
+        else:
+            missing.append(kw)
+
+    return present, missing
