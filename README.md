@@ -7,7 +7,7 @@ The app uses embeddings + LLMs to compute match scores (0–100) and generate ac
 
 **Live App**: https://uchicago-mpcs-57200-1-finalproject-resumejdmatcher.streamlit.app
 
-**Demo Video**: 
+**Demo Video**: https://youtu.be/bj5eyulUw5Y
 
 **Course**: The University of Chicago – MPCS 57200-1 Generative AI
 
@@ -128,5 +128,6 @@ export OPENAI_API_KEY="sk-xxxx"
 streamlit run app.py
 ```
 
-
+## Source
+Some resume samples in the demo video are from https://www.shu.edu/documents/Resume-Samples.pdf.
 
